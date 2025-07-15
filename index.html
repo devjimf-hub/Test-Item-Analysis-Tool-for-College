@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Item Analysis - College Assessment Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fafafa;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .header h1 {
+            color: #111827;
+            font-size: 2.25rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .upload-section {
+            background: #f9fafb;
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 48px;
+            text-align: center;
+            margin-bottom: 32px;
+            transition: all 0.2s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .upload-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .format-info {
+            background: #f0f9ff;
+            border-left: 3px solid #3b82f6;
+            padding: 20px;
+            margin: 24px 0;
+            border-radius: 8px;
+        }
+
+        .format-info h3 {
+            color: #111827;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .format-info p {
+            color: #4b5563;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            color: #2c3e50;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 32px;
+        }
+
+        .analysis-tabs {
+            display: flex;
+            margin-bottom: 24px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            color: #6b7280;
+        }
+
+        .tab-btn.active {
+            background: #ffffff;
+            color: #111827;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-btn:hover {
+            color: #374151;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .chart-container {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 24px;
+        }
+
+        .item-analysis-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        .item-analysis-table th {
+            background: #f9fafb;
+            color: #374151;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .item-analysis-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.9rem;
+        }
+
+        .item-analysis-table tr:hover {
+            background: #f9fafb;
+        }
+
+        .item-analysis-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .difficulty-easy { 
+            background: #f0fdf4; 
+            color: #166534; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-size: 0.8rem; 
+            font-weight: 500;
+        }
+        
+        .difficulty-medium { 
+            background: #fefce8; 
+            color: #a16207; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-size: 0.8rem; 
+            font-weight: 500;
+        }
+        
+        .difficulty-hard { 
+            background: #fef2f2; 
+            color: #dc2626; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-size: 0.8rem; 
+            font-weight: 500;
+        }
+
+        .discrimination-excellent { 
+            background: #f0fdf4; 
+            color: #166534; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-size: 0.8rem; 
+            font-weight: 500;
+        }
+        
+        .discrimination-good { 
+            background: #f0f9ff; 
+            color: #1e40af; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-size: 0.8rem; 
+            font-weight: 500;
+        }
+        
+        .discrimination-fair { 
+            background: #fefce8; 
+            color: #a16207; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-size: 0.8rem; 
+            font-weight: 500;
+        }
+        
+        .discrimination-poor { 
+            background: #fef2f2; 
+            color: #dc2626; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-size: 0.8rem; 
+            font-weight: 500;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px;
+            color: #6b7280;
+            font-size: 1.1rem;
+        }
+
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #fecaca;
+        }
+
+        .download-section {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            border: 1px solid #dee2e6;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            margin: 0 10px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(40, 167, 69, 0.3);
+        }
+
+        .download-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.875rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .analysis-tabs {
+                flex-direction: column;
+                gap: 2px;
+            }
+            
+            .tab-btn {
+                border-radius: 6px;
+            }
+            
+            .upload-section {
+                padding: 32px 20px;
+            }
+            
+            .chart-container {
+                padding: 16px;
+            }
+            
+            .item-analysis-table {
+                font-size: 0.8rem;
+            }
+            
+            .item-analysis-table th,
+            .item-analysis-table td {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Test Item Analysis Tool</h1>
+            <p>Comprehensive analysis of multiple choice test performance and item quality</p>
+        </div>
+
+        <div class="upload-section">
+            <h2>Upload Test Data</h2>
+            <p>Upload your CSV file with student test responses</p>
+            <input type="file" id="csvFile" accept=".csv" />
+            <button class="upload-btn" onclick="document.getElementById('csvFile').click()">
+                📁 Choose CSV File
+            </button>
+            
+            <div class="format-info">
+                <h3>Expected CSV Format:</h3>
+                <p><strong>Column 1:</strong> Student ID/Name<br>
+                <strong>Column 2:</strong> Total Score (optional)<br>
+                <strong>Columns 3+:</strong> Item responses (A, B, C, D, etc.)<br>
+                <strong>Last Row:</strong> Correct answers key (use "KEY" in first column)</p>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="download-section">
+                <h3>Export Results</h3>
+                <p>Download your analysis results in CSV format</p>
+                <button class="download-btn" onclick="downloadItemAnalysis()">
+                    📊 Download Item Analysis CSV
+                </button>
+                <button class="download-btn" onclick="downloadStudentScores()">
+                    📈 Download Student Scores CSV
+                </button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Students</h3>
+                    <div class="value" id="totalStudents">0</div>
+                    <div class="label">Participants</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Items</h3>
+                    <div class="value" id="totalItems">0</div>
+                    <div class="label">Questions</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Mean Score</h3>
+                    <div class="value" id="meanScore">0%</div>
+                    <div class="label">Average Performance</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Reliability</h3>
+                    <div class="value" id="reliability">0.00</div>
+                    <div class="label">Cronbach's Alpha</div>
+                </div>
+            </div>
+
+            <div class="analysis-tabs">
+                <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+                <button class="tab-btn" onclick="showTab('items')">Item Analysis</button>
+                <button class="tab-btn" onclick="showTab('distribution')">Score Distribution</button>
+                <button class="tab-btn" onclick="showTab('difficulty')">Difficulty Analysis</button>
+            </div>
+
+            <div id="overview" class="tab-content active">
+                <div class="chart-container">
+                    <canvas id="overviewChart"></canvas>
+                </div>
+            </div>
+
+            <div id="items" class="tab-content">
+                <div class="chart-container">
+                    <table class="item-analysis-table" id="itemTable">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Difficulty</th>
+                                <th>Discrimination</th>
+                                <th>Point Biserial</th>
+                                <th>Correct Answer</th>
+                                <th>A</th>
+                                <th>B</th>
+                                <th>C</th>
+                                <th>D</th>
+                                <th>Quality</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="distribution" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+
+            <div id="difficulty" class="tab-content">
+                <div class="chart-container">
+                    <canvas id="difficultyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testData = null;
+        let analysisResults = null;
+
+        document.getElementById('csvFile').addEventListener('change', handleFile);
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    Papa.parse(e.target.result, {
+                        header: false,
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            processData(results.data);
+                        }
+                    });
+                } catch (error) {
+                    showError('Error parsing CSV file: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function processData(data) {
+            try {
+                // Find the answer key row
+                let keyRowIndex = -1;
+                for (let i = 0; i < data.length; i++) {
+                    if (data[i][0] && data[i][0].toString().toUpperCase().includes('KEY')) {
+                        keyRowIndex = i;
+                        break;
+                    }
+                }
+
+                if (keyRowIndex === -1) {
+                    showError('Answer key row not found. Please include a row with "KEY" in the first column.');
+                    return;
+                }
+
+                // Extract answer key
+                const answerKey = data[keyRowIndex].slice(2); // Skip first two columns
+                
+                // Extract student responses
+                const students = [];
+                for (let i = 0; i < data.length; i++) {
+                    if (i !== keyRowIndex && data[i].length > 2) {
+                        const studentId = data[i][0];
+                        const responses = data[i].slice(2);
+                        students.push({ id: studentId, responses: responses });
+                    }
+                }
+
+                testData = {
+                    students: students,
+                    answerKey: answerKey,
+                    totalItems: answerKey.length,
+                    totalStudents: students.length
+                };
+
+                performAnalysis();
+                displayResults();
+            } catch (error) {
+                showError('Error processing data: ' + error.message);
+            }
+        }
+
+        function performAnalysis() {
+            const { students, answerKey, totalItems, totalStudents } = testData;
+            
+            // Calculate scores for each student
+            const scores = students.map(student => {
+                let correct = 0;
+                for (let i = 0; i < totalItems; i++) {
+                    if (student.responses[i] === answerKey[i]) {
+                        correct++;
+                    }
+                }
+                return { id: student.id, score: correct, percentage: (correct / totalItems) * 100 };
+            });
+
+            // Calculate item statistics
+            const itemStats = [];
+            for (let i = 0; i < totalItems; i++) {
+                const itemResponses = students.map(s => s.responses[i]);
+                const correctCount = itemResponses.filter(r => r === answerKey[i]).length;
+                const difficulty = correctCount / totalStudents;
+                
+                // Calculate discrimination index (upper 27% vs lower 27%)
+                const sortedScores = scores.sort((a, b) => b.score - a.score);
+                const upperGroup = Math.ceil(totalStudents * 0.27);
+                const lowerGroup = Math.floor(totalStudents * 0.27);
+                
+                const upperCorrect = sortedScores.slice(0, upperGroup)
+                    .filter(s => students.find(st => st.id === s.id).responses[i] === answerKey[i]).length;
+                const lowerCorrect = sortedScores.slice(-lowerGroup)
+                    .filter(s => students.find(st => st.id === s.id).responses[i] === answerKey[i]).length;
+                
+                const discrimination = (upperCorrect / upperGroup) - (lowerCorrect / lowerGroup);
+                
+                // Calculate point biserial correlation
+                const itemScores = students.map(s => s.responses[i] === answerKey[i] ? 1 : 0);
+                const totalScores = students.map(s => scores.find(sc => sc.id === s.id).score);
+                const pointBiserial = calculatePointBiserial(itemScores, totalScores);
+                
+                // Calculate option frequencies
+                const options = {};
+                ['A', 'B', 'C', 'D'].forEach(opt => {
+                    options[opt] = itemResponses.filter(r => r === opt).length;
+                });
+
+                itemStats.push({
+                    item: i + 1,
+                    difficulty: difficulty,
+                    discrimination: discrimination,
+                    pointBiserial: pointBiserial,
+                    correctAnswer: answerKey[i],
+                    options: options
+                });
+            }
+
+            // Calculate reliability (Cronbach's Alpha)
+            const reliability = calculateCronbachAlpha(students, answerKey);
+
+            analysisResults = {
+                scores: scores,
+                itemStats: itemStats,
+                reliability: reliability,
+                meanScore: scores.reduce((sum, s) => sum + s.percentage, 0) / scores.length
+            };
+        }
+
+        function calculatePointBiserial(itemScores, totalScores) {
+            const n = itemScores.length;
+            const meanItem = itemScores.reduce((sum, score) => sum + score, 0) / n;
+            const meanTotal = totalScores.reduce((sum, score) => sum + score, 0) / n;
+            
+            let numerator = 0;
+            let denomItem = 0;
+            let denomTotal = 0;
+            
+            for (let i = 0; i < n; i++) {
+                numerator += (itemScores[i] - meanItem) * (totalScores[i] - meanTotal);
+                denomItem += Math.pow(itemScores[i] - meanItem, 2);
+                denomTotal += Math.pow(totalScores[i] - meanTotal, 2);
+            }
+            
+            return numerator / Math.sqrt(denomItem * denomTotal);
+        }
+
+        function calculateCronbachAlpha(students, answerKey) {
+            const n = students.length;
+            const k = answerKey.length;
+            
+            // Calculate variance for each item
+            let itemVariances = 0;
+            for (let i = 0; i < k; i++) {
+                const itemScores = students.map(s => s.responses[i] === answerKey[i] ? 1 : 0);
+                const mean = itemScores.reduce((sum, score) => sum + score, 0) / n;
+                const variance = itemScores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / n;
+                itemVariances += variance;
+            }
+            
+            // Calculate total test variance
+            const totalScores = students.map(s => {
+                let correct = 0;
+                for (let i = 0; i < k; i++) {
+                    if (s.responses[i] === answerKey[i]) correct++;
+                }
+                return correct;
+            });
+            
+            const totalMean = totalScores.reduce((sum, score) => sum + score, 0) / n;
+            const totalVariance = totalScores.reduce((sum, score) => sum + Math.pow(score - totalMean, 2), 0) / n;
+            
+            return (k / (k - 1)) * (1 - (itemVariances / totalVariance));
+        }
+
+        function displayResults() {
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Update summary statistics
+            document.getElementById('totalStudents').textContent = testData.totalStudents;
+            document.getElementById('totalItems').textContent = testData.totalItems;
+            document.getElementById('meanScore').textContent = analysisResults.meanScore.toFixed(1) + '%';
+            document.getElementById('reliability').textContent = analysisResults.reliability.toFixed(2);
+            
+            // Create charts and tables
+            createOverviewChart();
+            createItemAnalysisTable();
+            createDistributionChart();
+            createDifficultyChart();
+        }
+
+        function createOverviewChart() {
+            const ctx = document.getElementById('overviewChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: analysisResults.itemStats.map(item => `Item ${item.item}`),
+                    datasets: [{
+                        label: 'Difficulty Index',
+                        data: analysisResults.itemStats.map(item => item.difficulty),
+                        backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Discrimination Index',
+                        data: analysisResults.itemStats.map(item => item.discrimination),
+                        backgroundColor: 'rgba(118, 75, 162, 0.7)',
+                        borderColor: 'rgba(118, 75, 162, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Item Difficulty and Discrimination Overview'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        function createItemAnalysisTable() {
+            const tbody = document.querySelector('#itemTable tbody');
+            tbody.innerHTML = '';
+            
+            analysisResults.itemStats.forEach(item => {
+                const row = document.createElement('tr');
+                
+                const difficultyClass = item.difficulty >= 0.7 ? 'difficulty-easy' : 
+                                       item.difficulty >= 0.4 ? 'difficulty-medium' : 'difficulty-hard';
+                
+                const discriminationClass = item.discrimination >= 0.4 ? 'discrimination-excellent' :
+                                           item.discrimination >= 0.3 ? 'discrimination-good' :
+                                           item.discrimination >= 0.2 ? 'discrimination-fair' : 'discrimination-poor';
+                
+                row.innerHTML = `
+                    <td>${item.item}</td>
+                    <td class="${difficultyClass}">${item.difficulty.toFixed(2)}</td>
+                    <td class="${discriminationClass}">${item.discrimination.toFixed(2)}</td>
+                    <td>${item.pointBiserial.toFixed(2)}</td>
+                    <td><strong>${item.correctAnswer}</strong></td>
+                    <td>${item.options.A || 0}</td>
+                    <td>${item.options.B || 0}</td>
+                    <td>${item.options.C || 0}</td>
+                    <td>${item.options.D || 0}</td>
+                    <td>${getItemQuality(item.difficulty, item.discrimination)}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function getItemQuality(difficulty, discrimination) {
+            if (difficulty >= 0.4 && difficulty <= 0.8 && discrimination >= 0.3) {
+                return 'Excellent';
+            } else if (difficulty >= 0.3 && difficulty <= 0.9 && discrimination >= 0.2) {
+                return 'Good';
+            } else if (discrimination >= 0.1) {
+                return 'Fair';
+            } else {
+                return 'Poor';
+            }
+        }
+
+        function createDistributionChart() {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            
+            // Create histogram data
+            const bins = [];
+            for (let i = 0; i <= 100; i += 10) {
+                bins.push(i);
+            }
+            
+            const histogram = new Array(bins.length - 1).fill(0);
+            analysisResults.scores.forEach(score => {
+                const binIndex = Math.min(Math.floor(score.percentage / 10), histogram.length - 1);
+                histogram[binIndex]++;
+            });
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: bins.slice(0, -1).map(bin => `${bin}-${bin + 9}%`),
+                    datasets: [{
+                        label: 'Number of Students',
+                        data: histogram,
+                        backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Score Distribution'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createDifficultyChart() {
+            const ctx = document.getElementById('difficultyChart').getContext('2d');
+            
+            const difficultyCategories = { Easy: 0, Medium: 0, Hard: 0 };
+            analysisResults.itemStats.forEach(item => {
+                if (item.difficulty >= 0.7) difficultyCategories.Easy++;
+                else if (item.difficulty >= 0.4) difficultyCategories.Medium++;
+                else difficultyCategories.Hard++;
+            });
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Easy (≥0.7)', 'Medium (0.4-0.69)', 'Hard (<0.4)'],
+                    datasets: [{
+                        data: [difficultyCategories.Easy, difficultyCategories.Medium, difficultyCategories.Hard],
+                        backgroundColor: [
+                            'rgba(52, 168, 83, 0.8)',
+                            'rgba(255, 193, 7, 0.8)',
+                            'rgba(220, 53, 69, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(52, 168, 83, 1)',
+                            'rgba(255, 193, 7, 1)',
+                            'rgba(220, 53, 69, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Item Difficulty Distribution'
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.container').appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        function downloadItemAnalysis() {
+            if (!analysisResults) {
+                showError('No analysis data available. Please upload and analyze a CSV file first.');
+                return;
+            }
+            
+            console.log('Starting item analysis download...');
+            
+            const headers = [
+                'Item Number',
+                'Difficulty Index',
+                'Discrimination Index',
+                'Point Biserial',
+                'Correct Answer',
+                'Option A Count',
+                'Option B Count', 
+                'Option C Count',
+                'Option D Count',
+                'Quality Rating',
+                'Difficulty Level',
+                'Discrimination Level'
+            ];
+            
+            const rows = analysisResults.itemStats.map(item => {
+                const difficultyLevel = item.difficulty >= 0.7 ? 'Easy' : 
+                                       item.difficulty >= 0.4 ? 'Medium' : 'Hard';
+                
+                const discriminationLevel = item.discrimination >= 0.4 ? 'Excellent' :
+                                           item.discrimination >= 0.3 ? 'Good' :
+                                           item.discrimination >= 0.2 ? 'Fair' : 'Poor';
+                
+                return [
+                    item.item,
+                    item.difficulty.toFixed(3),
+                    item.discrimination.toFixed(3),
+                    item.pointBiserial.toFixed(3),
+                    item.correctAnswer,
+                    item.options.A || 0,
+                    item.options.B || 0,
+                    item.options.C || 0,
+                    item.options.D || 0,
+                    getItemQuality(item.difficulty, item.discrimination),
+                    difficultyLevel,
+                    discriminationLevel
+                ];
+            });
+            
+            // Create CSV content with proper escaping
+            const csvContent = [headers, ...rows]
+                .map(row => row.map(field => {
+                    // Escape quotes and wrap in quotes if needed
+                    const stringField = String(field);
+                    if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+                        return '"' + stringField.replace(/"/g, '""') + '"';
+                    }
+                    return stringField;
+                }).join(','))
+                .join('\n');
+            
+            console.log('CSV content generated, length:', csvContent.length);
+            downloadCSV(csvContent, 'item_analysis_results.csv');
+        }
+
+        function downloadStudentScores() {
+            if (!analysisResults || !testData) {
+                showError('No analysis data available. Please upload and analyze a CSV file first.');
+                return;
+            }
+            
+            console.log('Starting student scores download...');
+            
+            const headers = [
+                'Student ID',
+                'Raw Score',
+                'Percentage Score',
+                'Percentile Rank',
+                'Grade'
+            ];
+            
+            // Sort scores for percentile calculation
+            const sortedScores = [...analysisResults.scores].sort((a, b) => a.score - b.score);
+            
+            const rows = analysisResults.scores.map(student => {
+                // Calculate percentile rank
+                const rank = sortedScores.findIndex(s => s.id === student.id) + 1;
+                const percentile = ((rank - 1) / (analysisResults.scores.length - 1)) * 100;
+                
+                // Assign letter grade based on percentage
+                let grade = 'F';
+                if (student.percentage >= 90) grade = 'A';
+                else if (student.percentage >= 80) grade = 'B';
+                else if (student.percentage >= 70) grade = 'C';
+                else if (student.percentage >= 60) grade = 'D';
+                
+                return [
+                    student.id,
+                    student.score,
+                    student.percentage.toFixed(1),
+                    percentile.toFixed(1),
+                    grade
+                ];
+            });
+            
+            // Create CSV content with proper escaping
+            const csvContent = [headers, ...rows]
+                .map(row => row.map(field => {
+                    const stringField = String(field);
+                    if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+                        return '"' + stringField.replace(/"/g, '""') + '"';
+                    }
+                    return stringField;
+                }).join(','))
+                .join('\n');
+            
+            console.log('CSV content generated, length:', csvContent.length);
+            downloadCSV(csvContent, 'student_scores_results.csv');
+        }
+
+        function downloadCSV(content, filename) {
+            try {
+                // Add BOM for proper UTF-8 encoding
+                const BOM = '\uFEFF';
+                const blob = new Blob([BOM + content], { type: 'text/csv;charset=utf-8;' });
+                
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                
+                // Trigger download
+                document.body.appendChild(link);
+                link.click();
+                
+                // Cleanup
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                // Show success message
+                showSuccess(`${filename} downloaded successfully!`);
+            } catch (error) {
+                console.error('Download error:', error);
+                showError('Error downloading file: ' + error.message);
+            }
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.style.background = '#d4edda';
+            successDiv.style.color = '#155724';
+            successDiv.style.padding = '15px';
+            successDiv.style.borderRadius = '8px';
+            successDiv.style.margin = '20px 0';
+            successDiv.textContent = message;
+            document.querySelector('.container').appendChild(successDiv);
+            
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
